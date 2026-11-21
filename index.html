@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moixódex</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: a handheld dex. Red shell, slot grid on the left screen, the entry on the right screen; stacks on phones. */
+:root{
+  --shell:#cc202a; --shell-dk:#96121c; --shell-lt:#e8434c;
+  --screen:#0e1610; --screen-2:#16241a; --phosphor:#8cff96; --phosphor-dim:#3f6e46;
+  --bezel:#e8e8e2; --ink:#14141a; --sun:#ffd640; --sea:#122234;
+  --pixel:"Press Start 2P",ui-monospace,"Courier New",monospace;
+  --crt:"VT323",ui-monospace,"Courier New",monospace;
+  color-scheme:dark;
+}
+html{background:var(--shell-dk)}
+body{background:var(--shell);color:#fff;font-family:var(--crt);font-size:22px;line-height:1.2;
+  background-image:repeating-linear-gradient(0deg,transparent 0 46px,rgba(0,0,0,.06) 46px 48px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:20px}
+header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.brand{display:flex;align-items:center;gap:14px}
+.lens{width:46px;height:46px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 35%,#bfe9ff,#2f8fd6 45%,#0b3e6e);box-shadow:0 0 0 5px var(--bezel),0 0 0 8px var(--ink)}
+.leds{display:flex;gap:6px}.leds i{width:12px;height:12px;border-radius:50%;background:#ffd640;box-shadow:0 0 0 2px var(--ink)}.leds i:nth-child(2){background:#5fe07a}.leds i:first-child{background:#ff6b6b}
+h1{font-family:var(--pixel);font-size:clamp(22px,4vw,34px);margin:0;letter-spacing:.04em;text-shadow:4px 4px 0 var(--shell-dk)}
+.tag{font-family:var(--pixel);font-size:11px;color:#ffe9a0;letter-spacing:.06em;margin-top:6px}
+.sign{position:relative;transform:rotate(-4deg);background:#ffd640;color:var(--ink);border:4px solid var(--ink);box-shadow:5px 5px 0 var(--shell-dk);padding:12px 26px 10px;text-align:center;max-width:340px;margin:0 auto 0 8px}
+.sign::before,.sign::after{content:"";position:absolute;left:0;right:0;height:8px;background:repeating-linear-gradient(-45deg,var(--ink) 0 8px,#ffd640 8px 16px)}
+.sign::before{top:0}.sign::after{bottom:0}
+.sign-t{font-family:var(--pixel);font-size:15px;line-height:1.5;letter-spacing:.04em;padding-top:4px}
+.sign-s{font-family:var(--crt);font-size:16px;opacity:.85;line-height:1.1;margin-top:2px;padding-bottom:4px}
+.nail{position:absolute;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#eee,#777 60%,#333);box-shadow:0 0 0 2px var(--ink)}
+.nail.l{left:6px}.nail.r{right:6px;top:30%}
+@media (max-width:560px){.sign{order:3;flex-basis:100%;max-width:260px;transform:rotate(-3deg)}.sign-t{font-size:12px}.sign-s{font-size:15px}}
+.hdr-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lang{position:relative}
+#lang-cur{display:flex;align-items:center;gap:8px}
+@media (max-width:560px){.lang-menu{left:0;right:auto}}
+.lang-btn{display:flex;align-items:center;gap:8px;font-family:var(--pixel);font-size:10px;color:#fff;background:var(--shell-dk);border:0;border-radius:6px;padding:8px 10px;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.lang-btn:focus-visible,.lang-menu li:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.flag{width:24px;height:16px;flex:none;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.lang-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;margin:0;padding:6px;list-style:none;background:var(--bezel);border-radius:8px;box-shadow:0 0 0 2px var(--ink),0 6px 0 rgba(0,0,0,.25);min-width:150px}
+.lang-menu li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;cursor:pointer;font-family:var(--pixel);font-size:10px;color:var(--ink)}
+.lang-menu li:hover,.lang-menu li[aria-selected="true"]{background:#fff}
+.handle{font-family:var(--pixel);font-size:11px;color:#fff;background:var(--shell-dk);padding:10px 12px;border-radius:6px;text-decoration:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.handle:hover,.handle:focus-visible{background:var(--ink);outline:none}
+.counter{font-family:var(--pixel);font-size:10px;color:var(--ink)}
+
+.dex{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:20px;align-items:start}
+@media (max-width:860px){.dex{grid-template-columns:1fr}}
+.case{background:var(--bezel);border-radius:18px;padding:16px;box-shadow:0 0 0 4px var(--ink),8px 8px 0 var(--shell-dk);min-width:0}
+.nav{display:flex;gap:6px}.nb{font-family:var(--pixel);font-size:11px;line-height:1;color:var(--ink);background:transparent;border:2px solid var(--ink);border-radius:4px;padding:6px 8px;cursor:pointer}.nb:hover{background:var(--ink);color:var(--bezel)}.nb:focus-visible{outline:2px solid var(--sun);outline-offset:2px}#close{display:none}
+@media (min-width:861px){#entry-case{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+@media (max-width:860px){#entry-case{display:none}body.open #entry-case{display:block;position:fixed;inset:0;z-index:50;border-radius:0;overflow:auto;padding:12px 12px 24px;box-shadow:none}body.open #entry-case .cap{position:sticky;top:-12px;z-index:2;background:var(--bezel);margin:-12px -12px 10px;padding:12px 16px}body.open{overflow:hidden}#close{display:inline-block}}
+.case .cap{display:flex;justify-content:space-between;align-items:center;font-family:var(--pixel);font-size:10px;color:var(--ink);margin:0 4px 10px}
+.screen{background:var(--screen);border-radius:8px;box-shadow:inset 0 0 0 3px var(--ink);position:relative;overflow:hidden}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+
+/* slot grid */
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:8px;padding:12px 12px 0;align-items:end}
+.flt{display:grid;gap:4px;min-width:0}.flt span{font-family:var(--pixel);font-size:9px;color:var(--phosphor);opacity:.75}
+.flt select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;font-family:var(--crt);font-size:18px;color:var(--phosphor);background:var(--screen-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238cff96'/%3E%3C/svg%3E") no-repeat right 8px center;border:2px solid var(--phosphor-dim);border-radius:4px;padding:4px 24px 4px 8px;cursor:pointer}
+.flt select.on{border-color:var(--phosphor);box-shadow:0 0 0 1px var(--phosphor)}
+.flt select:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.reset{font-family:var(--pixel);font-size:9px;color:var(--phosphor);background:transparent;border:2px solid var(--phosphor-dim);border-radius:4px;padding:9px;cursor:pointer}
+.reset:disabled{opacity:.35;cursor:default}.reset:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.grp{grid-column:1/-1;font-family:var(--pixel);font-size:10px;color:var(--sun);padding:6px 2px 0;border-bottom:2px solid var(--phosphor-dim)}
+.fam{grid-column:1/-1;font-family:var(--pixel);font-size:9px;color:var(--phosphor);opacity:.8;padding:4px 2px 0}
+.nores{grid-column:1/-1;font-family:var(--pixel);font-size:10px;color:var(--phosphor-dim);text-align:center;padding:24px 8px}
+.chip{font-family:var(--pixel);font-size:9px;color:var(--phosphor);background:transparent;border:2px solid var(--phosphor-dim);border-radius:4px;padding:8px 9px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--phosphor);color:var(--screen);border-color:var(--phosphor)}
+.chip:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;padding:12px}
+@media (max-width:560px){.slots{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.slot img,.slot.unk .q{width:56px;height:56px}.slot .nm{font-size:16px}.e-head{grid-template-columns:1fr}.e-spr{width:88px;height:88px;order:-1}}
+.slot{appearance:none;border:2px solid var(--phosphor-dim);background:var(--screen-2);border-radius:6px;padding:8px 6px 10px;cursor:pointer;display:grid;gap:6px;justify-items:center;color:var(--phosphor);font-family:var(--crt);min-width:0}
+.slot .no{font-family:var(--pixel);font-size:9px;justify-self:start}
+.slot img{width:72px;height:72px;image-rendering:pixelated}
+.slot .nm{font-size:18px;line-height:1;text-align:center;min-height:2em;display:flex;align-items:center}
+.slot.unk img{filter:brightness(0) opacity(.55)}
+.slot.notseen img{filter:grayscale(1) brightness(.75);opacity:.6}.slot.notseen .no::after{content:" · " attr(data-ns);color:var(--sun)}
+.notseen-tag{font-family:var(--pixel);font-size:10px;color:var(--ink);background:var(--sun);padding:6px 10px;border-radius:4px;justify-self:start}
+.slot.unk .q{width:72px;height:72px;display:grid;place-items:center;font-family:var(--pixel);font-size:22px;color:var(--phosphor-dim)}
+.slot[aria-current="true"]{border-color:var(--sun);box-shadow:0 0 0 2px var(--sun) inset}
+.slot:hover{border-color:var(--phosphor)}
+.slot:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.slot[hidden]{display:none!important}
+
+/* entry */
+.entry{padding:18px;display:grid;gap:16px;color:var(--phosphor)}
+.e-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+.e-no{font-family:var(--pixel);font-size:12px;color:var(--sun)}
+.e-en{font-family:var(--pixel);font-size:clamp(16px,2.4vw,22px);line-height:1.35;color:#fff;margin:8px 0 4px;text-wrap:balance}
+.e-la{font-style:italic;color:var(--sun);font-size:26px;overflow-wrap:anywhere}
+.e-alt{color:var(--phosphor);font-size:20px;margin-top:2px}
+.spr-wrap{display:grid;gap:6px;justify-items:center;align-content:start}
+.sexes{display:flex;gap:4px}.sex{appearance:none;font-family:var(--pixel);font-size:10px;padding:5px 8px;border-radius:4px;cursor:pointer;border:2px solid var(--phosphor-dim);background:var(--screen-2);color:var(--phosphor-dim)}.sex[aria-pressed="true"]{background:var(--phosphor);color:var(--screen);border-color:var(--phosphor)}.sex:focus-visible{outline:2px solid var(--phosphor);outline-offset:2px}
+.e-spr{width:114px;height:114px;padding:3px;box-sizing:border-box;image-rendering:pixelated;background:var(--screen-2);border-radius:8px;box-shadow:inset 0 0 0 2px var(--phosphor-dim)}
+.types{display:flex;gap:8px;flex-wrap:wrap}
+.type{font-family:var(--pixel);font-size:10px;color:#fff;padding:8px 12px;border-radius:999px;box-shadow:0 0 0 2px #fff inset}
+.media{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.media{grid-template-columns:1fr}}
+.media figure{margin:0;display:grid;gap:6px;min-width:0}
+.media img{width:100%;height:auto;border-radius:6px;box-shadow:0 0 0 2px var(--phosphor-dim)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;color:var(--phosphor)}.legend i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px}
+.media figcaption{font-family:var(--pixel);font-size:9px;color:var(--phosphor-dim)}
+.bonus{font-size:20px;border-style:dashed}.bonus .bn{font-family:var(--pixel);font-size:10px;background:var(--phosphor);color:var(--screen);padding:2px 6px;border-radius:3px;margin-right:6px;vertical-align:2px}
+.ph-wait{box-sizing:border-box;width:100%;min-width:0;aspect-ratio:860/567;display:grid;place-items:center;text-align:center;font-family:var(--pixel);font-size:11px;line-height:1.8;color:var(--phosphor-dim);border:2px dashed var(--phosphor-dim);border-radius:6px}
+.fact{font-size:24px;line-height:1.25;color:var(--phosphor);border:2px solid var(--phosphor-dim);border-radius:6px;padding:12px 14px}
+.stats{display:grid;gap:10px}
+.stat{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;align-items:center}
+@media (max-width:480px){.stat{grid-template-columns:86px minmax(0,1fr)}.stat .v{grid-column:2}}
+.stat .k{font-family:var(--pixel);font-size:10px}
+.bar{display:grid;grid-template-columns:repeat(17,1fr);gap:3px}
+.bar i{height:18px;border:2px solid var(--phosphor-dim);border-radius:2px}
+.bar i.on{background:var(--phosphor);border-color:var(--phosphor)}
+.iucn{display:flex;gap:4px}
+.iucn i{font-style:normal;font-family:var(--pixel);font-size:9px;padding:4px 6px;border:2px solid var(--phosphor-dim);border-radius:3px;color:var(--phosphor-dim)}
+.iucn i.on{background:var(--phosphor);color:var(--screen);border-color:var(--phosphor)}
+.stat .v{font-size:22px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.scale{font-size:16px;color:var(--phosphor-dim)}
+.log{display:grid;gap:4px}
+.log h3,.sec{font-family:var(--pixel);font-size:10px;color:var(--sun);margin:0;letter-spacing:.06em}
+.log ul{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.log li{display:grid;grid-template-columns:132px minmax(0,1fr);gap:10px;font-size:20px}
+.log time{color:var(--phosphor-dim);font-variant-numeric:tabular-nums}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{font-family:var(--pixel);font-size:10px;color:var(--screen);background:var(--phosphor);padding:10px 12px;border-radius:4px;text-decoration:none}
+.links a:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.locked{padding:40px 18px;text-align:center;display:grid;gap:12px;justify-items:center;color:var(--phosphor)}
+.locked .big{font-family:var(--pixel);font-size:28px;color:var(--phosphor-dim)}
+footer{font-family:var(--pixel);font-size:9px;color:#ffe9a0;line-height:1.8;text-align:center}
+@media (prefers-reduced-motion:no-preference){.slot{transition:border-color .15s}.entry{animation:boot .25s steps(4)}@keyframes boot{from{opacity:.2;filter:brightness(2)}to{opacity:1}}}
+@media (max-width:560px){.e-head{grid-template-columns:1fr}.spr-wrap{order:-1;justify-items:start;justify-content:start;grid-template-columns:auto auto;align-items:end;gap:10px}.e-spr{width:88px;height:88px}.sexes{flex-direction:column}}
+.tabs{display:flex;gap:10px;flex-wrap:wrap}
+.tab{font-family:var(--pixel);font-size:12px;color:#fff;background:var(--shell-dk);border:0;border-radius:8px 8px 0 0;padding:12px 16px;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.tab[aria-selected="true"]{background:var(--bezel);color:var(--ink);box-shadow:0 0 0 3px var(--ink)}
+.tab:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.imp{padding:12px 12px 4px;display:grid;gap:10px;color:var(--phosphor);border-bottom:2px solid var(--phosphor-dim)}
+.imp[hidden]{display:none}
+.imp-t{margin:0;font-size:20px;line-height:1.15}
+.imp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.imp-row label{font-family:var(--pixel);font-size:9px;min-width:96px}
+.imp-row input{font-family:var(--crt);font-size:19px;color:var(--phosphor);background:var(--screen-2);border:2px solid var(--phosphor-dim);border-radius:4px;padding:5px 8px;min-width:0;flex:1 1 140px;max-width:240px}
+.imp-row input:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.imp-a{color:var(--sun);font-size:18px}
+.imp-s{font-size:18px;color:var(--sun)}
+.chip:disabled{opacity:.35;cursor:default}
+.slot.mis img{filter:brightness(0) invert(.32) sepia(1) saturate(2.5) hue-rotate(70deg);opacity:.8}
+.slot.mis .no::after{content:" · ?";color:var(--phosphor-dim)}
+.slot.got{border-color:var(--phosphor)}
+.silbox img{width:100%;height:100%;image-rendering:pixelated;filter:brightness(0) invert(.32) sepia(1) saturate(2.5) hue-rotate(70deg)}
+.mymap{width:100%;max-width:520px;height:auto;image-rendering:pixelated;border-radius:6px;box-shadow:0 0 0 2px var(--phosphor-dim)}
+.mark{justify-self:start;margin-top:6px}
+.tst{text-shadow:none;font-family:var(--pixel);font-size:8px;background:var(--sun);color:var(--ink);padding:3px 5px;border-radius:3px;vertical-align:2px}
+.team{padding:12px 12px 0;display:grid;gap:10px}.team[hidden]{display:none}
+.tcard{background:linear-gradient(135deg,#2a4fa0,#1b2f66);border:4px solid var(--sun);border-radius:12px;padding:12px;box-shadow:0 0 0 3px var(--ink),6px 6px 0 rgba(0,0,0,.35)}
+.tc-h{display:flex;justify-content:space-between;align-items:center;font-family:var(--pixel);font-size:13px;color:var(--sun);margin-bottom:10px;text-shadow:2px 2px 0 var(--ink)}
+.tc-b{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:12px}
+@media (max-width:560px){.tc-b{grid-template-columns:1fr}}
+.trainer{background:#e8f0ff;border:3px solid var(--ink);border-radius:8px;display:grid;justify-items:center;align-content:center;gap:8px;padding:12px 6px;text-align:center;font-family:var(--pixel);font-size:8px;line-height:1.6;color:#2a4fa0}
+.tr-sil{width:56px;height:84px;background:#2a4fa0;opacity:.35;clip-path:polygon(35% 0,65% 0,72% 22%,60% 30%,95% 40%,85% 70%,70% 62%,70% 100%,30% 100%,30% 62%,15% 70%,5% 40%,40% 30%,28% 22%)}
+.tc-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tc{background:var(--screen-2);border:2px solid var(--phosphor);border-radius:6px;display:grid;justify-items:center;gap:4px;padding:6px 4px;color:var(--phosphor);font-size:16px;text-align:center;line-height:1;min-height:96px;align-content:center}
+.tc img{width:60px;height:60px;image-rendering:pixelated}
+.tc.emp{border-style:dashed;border-color:var(--phosphor-dim)}.tc .q{font-family:var(--pixel);font-size:20px;color:var(--phosphor-dim)}
+.slot.fav{border-color:var(--sun);box-shadow:0 0 0 2px var(--sun) inset}.slot.fav .no::after{content:" ★";color:var(--sun)}
+.filters[hidden]{display:none}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="lens" aria-hidden="true"></span>
+      <div>
+        <h1>MOIXÓDEX</h1>
+        <div class="tag" id="t-tag">YOUR BIRD LOG</div>
+      </div>
+      <span class="leds" aria-hidden="true"><i></i><i></i><i></i></span>
+    </div>
+    <div class="sign" role="note"><i class="nail l" aria-hidden="true"></i><i class="nail r" aria-hidden="true"></i>
+      <div class="sign-t" id="t-uc">SITE UNDER CONSTRUCTION</div><div class="sign-s" id="t-ucs">(any feedback is very welcome!)</div></div>
+    <div class="hdr-r"><div class="lang" id="lang">
+      <button type="button" class="lang-btn" id="lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Language"><span id="lang-cur"></span><span class="caret" aria-hidden="true">▾</span></button>
+      <ul class="lang-menu" id="lang-menu" role="listbox" aria-label="Language" hidden>
+        <li role="option" data-lang="en" tabindex="-1"><svg class="flag" viewBox="0 0 60 30" aria-hidden="true"><clipPath id="uk-c"><path d="M0 0v30h60V0z"/></clipPath><clipPath id="uk-t"><path d="M30 15h30v15zv15H0zH0V0zV0h30z"/></clipPath><g clip-path="url(#uk-c)"><path d="M0 0v30h60V0z" fill="#012169"/><path d="M0 0l60 30m0-30L0 30" stroke="#fff" stroke-width="6"/><path d="M0 0l60 30m0-30L0 30" clip-path="url(#uk-t)" stroke="#C8102E" stroke-width="4"/><path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></g></svg><span>English</span></li>
+        <li role="option" data-lang="ca" tabindex="-1"><svg class="flag" viewBox="0 0 9 6" aria-hidden="true"><rect width="9" height="6" fill="#FCDD09"/><path d="M0 .667h9M0 1.999h9M0 3.333h9M0 4.667h9" stroke="#DA121A" stroke-width=".667"/></svg><span>Català</span></li>
+      </ul>
+    </div>
+    <a class="handle" href="https://www.instagram.com/regulus_ignicapilla/" target="_blank" rel="noopener">@regulus_ignicapilla</a></div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Dex"><button class="tab" type="button" role="tab" data-v="full" id="tab-full">FULL DEX</button><button class="tab" type="button" role="tab" data-v="mine" id="tab-mine">MY DEX</button><button class="tab" type="button" role="tab" data-v="fav" id="tab-fav">MY TEAM</button></nav>
+
+  <main class="dex">
+    <section class="case" aria-label="All entries">
+      <div class="cap"><span id="t-list">DEX LIST</span><span class="counter" id="counter"></span></div>
+      <div class="screen">
+        <div class="imp" id="imp" hidden></div>
+        <div class="team" id="team" hidden></div>
+        <div class="filters" id="filters" role="group" aria-label="Filters"></div>
+        <div class="slots" id="slots"></div>
+      </div>
+    </section>
+    <section class="case" id="entry-case" aria-label="Selected entry">
+      <div class="cap"><span id="cap-no">ENTRY</span><span class="nav"><button type="button" class="nb" id="prev" aria-label="Previous bird">◀</button><button type="button" class="nb" id="next" aria-label="Next bird">▶</button><button type="button" class="nb" id="close" aria-label="Close">✕</button></span></div>
+      <div class="screen" id="entry"></div>
+    </section>
+  </main>
+
+  <footer id="t-foot">Range maps from eBird and Birds of the World · Sizes and weights from Animal Diversity Web and Wikipedia · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla</footer>
+</div>
+
+<script src="data/land.js"></script>
+<script src="data/birds.js"></script>
+<script>
+const TOTAL_SLOTS = 32;
+/* ---- MY DEX: the visitor's own sightings, loaded from iNaturalist or an eBird export, kept only in this browser ---- */
+let VIEW = "full"; try { const v = localStorage.getItem("moixodex-view"); if (v === "mine" || v === "fav") VIEW = v; } catch (e) {}
+let SHOWNOT = true; try { SHOWNOT = localStorage.getItem("moixodex-shownot") !== "0"; } catch (e) {}
+let MINE = {obs: {}, manual: [], inat: "", fav: []};
+try { const v = JSON.parse(localStorage.getItem("moixodex-mine") || "null"); if (v && v.obs) MINE = Object.assign(MINE, v); if (!Array.isArray(MINE.fav)) MINE.fav = []; } catch (e) {}
+const saveMine = () => { try { localStorage.setItem("moixodex-mine", JSON.stringify(MINE)); } catch (e) {} };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sci = s => String(s || "").toLowerCase().trim().split(/\s+/).slice(0, 2).join(" ");
+const keyOf = b => sci(b.la);
+let IDX = null;
+function addObs(src, la, en, date, lat, lng, place) {
+  if (!IDX) { IDX = new Map(); for (const b of BIRDS) { IDX.set("la:" + sci(b.la), b); IDX.set("en:" + b.en.toLowerCase(), b); (b.syn || []).forEach(s => IDX.set("la:" + sci(s), b)); } }
+  const b = IDX.get("la:" + sci(la)) || (en && IDX.get("en:" + String(en).toLowerCase().trim()));
+  if (!b) return false;
+  (MINE.obs[keyOf(b)] ||= []).push([String(date || ""), lat == null || lat === "" ? null : +lat, lng == null || lng === "" ? null : +lng, String(place || ""), src]);
+  return true;
+}
+const dropSrc = src => { for (const k in MINE.obs) { MINE.obs[k] = MINE.obs[k].filter(o => o[4] !== src); if (!MINE.obs[k].length) delete MINE.obs[k]; } };
+const mySeen = b => !!(MINE.obs[keyOf(b)]?.length || MINE.manual.includes(keyOf(b)));
+const isSeen = b => VIEW !== "full" ? mySeen(b) : !b.unseen;
+const slotCls = b => VIEW === "fav" ? (MINE.fav.includes(keyOf(b)) ? " got fav" : " got") : VIEW === "mine" ? (mySeen(b) ? " got" : " mis") : (b.unseen ? " notseen" : "");
+let IMP_MSG = "";
+function impHTML() {
+  const el = document.getElementById("imp"); el.hidden = VIEW !== "mine"; if (el.hidden) return;
+  const nSp = BIRDS.filter(mySeen).length, nObs = Object.values(MINE.obs).reduce((a, x) => a + x.length, 0);
+  const sum = nObs || MINE.manual.length ? (LANG === "ca" ? `${nObs} observacions · ${nSp} espècies de la dex` : `${nObs} sightings · ${nSp} species in the dex`) : "";
+  el.innerHTML = `<p class="imp-t">${t("impT")}</p>
+    <form class="imp-row" id="inat-f"><label for="inat-u">iNaturalist</label><input id="inat-u" placeholder="${t("user")}" value="${esc(MINE.inat)}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="chip" type="submit">${t("load")}</button></form>
+    <div class="imp-row"><label for="eb-f">eBird</label><input type="file" id="eb-f" accept=".csv,.zip" hidden><button class="chip" type="button" id="eb-b">${t("upload")}</button><a class="imp-a" href="https://ebird.org/downloadMyData" target="_blank" rel="noopener">${t("ebHow")}</a></div>
+    <div class="imp-row"><button class="chip" type="button" id="shownot" aria-pressed="${SHOWNOT}">${t("showNot")}</button><button class="chip" type="button" id="clear-mine" ${nObs || MINE.manual.length ? "" : "disabled"}>${t("clear")}</button><span class="imp-s" id="imp-s" role="status">${esc(IMP_MSG || sum)}</span></div>`;
+}
+const setMsg = m => { IMP_MSG = m; const s = document.getElementById("imp-s"); if (s) s.textContent = m; };
+async function loadINat(user) {
+  user = user.trim().replace(/^@/, ""); if (!user) return;
+  setMsg(t("loading"));
+  const got = [];
+  try {
+    for (let page = 1; page <= 25; page++) {
+      const r = await fetch(`https://api.inaturalist.org/v1/observations?user_login=${encodeURIComponent(user)}&iconic_taxa=Aves&per_page=200&page=${page}&order_by=observed_on&order=desc&locale=en`);
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      for (const o of j.results) got.push(o);
+      setMsg(`${t("loading")} ${got.length}/${j.total_results}`);
+      if (page * 200 >= j.total_results) break;
+      await new Promise(res => setTimeout(res, 1100));   // iNaturalist asks for about one request per second
+    }
+  } catch (e) { IMP_MSG = ""; setMsg(t("errInat")); return; }
+  dropSrc("iNat");
+  let n = 0; for (const o of got) { const c = o.geojson && o.geojson.coordinates; n += addObs("iNat", o.taxon && o.taxon.name, o.taxon && o.taxon.preferred_common_name, o.observed_on, c ? c[1] : null, c ? c[0] : null, o.place_guess); }
+  MINE.inat = user; saveMine();
+  IMP_MSG = LANG === "ca" ? `iNaturalist: ${got.length} observacions d'ocells, ${n} són d'espècies de la dex.` : `iNaturalist: ${got.length} bird sightings, ${n} match the dex.`;
+  impHTML(); slotsHTML(); route();
+}
+function parseCSV(s) {
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < s.length; i++) { const c = s[i];
+    if (q) { if (c === '"') { if (s[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && s[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c; }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+async function unzipCsv(u8) {   // the eBird export is a zip with one csv inside
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength); let e = u8.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error("zip");
+  let p = dv.getUint32(e + 16, true); const n = dv.getUint16(e + 10, true);
+  for (let k = 0; k < n; k++) {
+    const meth = dv.getUint16(p + 10, true), csz = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl)); p += 46 + nl + xl + cl;
+    if (!/\.csv$/i.test(name)) continue;
+    const st = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true), data = u8.subarray(st, st + csz);
+    if (meth === 0) return new TextDecoder().decode(data);
+    return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+  }
+  throw new Error("nocsv");
+}
+async function loadEbird(file) {
+  setMsg(t("loading"));
+  try {
+    const u8 = new Uint8Array(await file.arrayBuffer());
+    const text = u8[0] === 0x50 && u8[1] === 0x4b ? await unzipCsv(u8) : new TextDecoder().decode(u8);
+    const rows = parseCSV(text.replace(/^﻿/, "")), h = rows[0].map(x => x.trim()), ix = n => h.indexOf(n);
+    const iS = ix("Scientific Name"), iC = ix("Common Name"), iD = ix("Date"), iA = ix("Latitude"), iO = ix("Longitude"), iL = ix("Location");
+    if (iS < 0) throw new Error("format");
+    dropSrc("eBird"); let n = 0, all = 0;
+    for (const r of rows.slice(1)) { if (r.length < h.length / 2) continue; all++; n += addObs("eBird", r[iS], r[iC], r[iD], r[iA], r[iO], r[iL]); }
+    saveMine();
+    IMP_MSG = LANG === "ca" ? `eBird: ${all} registres, ${n} són d'espècies de la dex.` : `eBird: ${all} records, ${n} match the dex.`;
+    if (iA < 0) IMP_MSG += " " + t("lifeTip");
+    impHTML(); slotsHTML(); route();
+  } catch (e) { IMP_MSG = ""; setMsg(t("errEb")); }
+}
+function myLogHTML(b) {
+  const k = keyOf(b), man = MINE.manual.includes(k), obs = (MINE.obs[k] || []).slice().sort((a, c) => c[0].localeCompare(a[0]));
+  const btn = `<button class="chip mark" type="button" id="mark" aria-pressed="${man}">${man ? t("unmark") : t("mark")}</button>`;
+  if (!obs.length) return `<div class="log"><h3>${t("yours")}</h3><p class="notseen-tag">${man ? t("marked") : t("notseen")}</p>${btn}</div>`;
+  const pts = obs.some(o => o[1] != null), first = obs[obs.length - 1];
+  const firstH = `<div class="log"><h3>${t("first")}</h3><ul><li><time>${esc(first[0])}</time><span>${esc(first[3] || "-")} · ${first[4]}</span></li></ul></div>`;
+  if (obs.length === 1 && !pts) return firstH;
+  return firstH + `<div class="log"><h3>${t("yours")} · ${obs.length}</h3>
+    ${pts ? `<canvas class="mymap" id="mymap" width="256" height="160" role="img" aria-label="${t("mapAria")}"></canvas>` : ""}
+    <ul>${obs.slice(0, 8).map(o => `<li><time>${esc(o[0])}</time><span>${esc(o[3] || "-")} · ${o[4]}</span></li>`).join("")}</ul>
+    ${obs.length > 8 ? `<p class="scale">+${obs.length - 8} ${t("more")}</p>` : ""}</div>`;
+}
+function drawMyMap(cv, b) {
+  const pts = (MINE.obs[keyOf(b)] || []).filter(o => o[1] != null && isFinite(o[1]) && isFinite(o[2]));
+  if (!pts.length) return;
+  let x0 = Math.min(...pts.map(p => p[2])), x1 = Math.max(...pts.map(p => p[2])), y0 = Math.min(...pts.map(p => p[1])), y1 = Math.max(...pts.map(p => p[1]));
+  const W_ = cv.width, H_ = cv.height, k = Math.cos((y0 + y1) / 2 * Math.PI / 180) || .1;
+  let cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, sx = Math.max((x1 - x0) * 1.4, 22), sy = Math.max((y1 - y0) * 1.4, 12);
+  if (sx * k / sy > W_ / H_) sy = sx * k * H_ / W_; else sx = sy / k * W_ / H_;
+  const X = lo => (lo - cx + sx / 2) / sx * W_, Y = la => (cy + sy / 2 - la) / sy * H_;
+  const g = cv.getContext("2d"); g.fillStyle = "#122234"; g.fillRect(0, 0, W_, H_);
+  g.fillStyle = "#2c4a32"; g.strokeStyle = "#3f6e46"; g.lineWidth = 1;
+  for (const r of LAND) { let x = r[0], y = r[1]; g.beginPath(); g.moveTo(X(x / 4), Y(y / 4));
+    for (let i = 2; i < r.length; i += 2) { x += r[i]; y += r[i + 1]; g.lineTo(X(x / 4), Y(y / 4)); } g.closePath(); g.fill(); g.stroke(); }
+  for (const p of pts) { const px = Math.round(X(p[2])), py = Math.round(Y(p[1])); g.fillStyle = "#14141a"; g.fillRect(px - 3, py - 3, 7, 7); g.fillStyle = "#ffd640"; g.fillRect(px - 2, py - 2, 5, 5); }
+}
+
+function teamHTML() {
+  const el = document.getElementById("team"); el.hidden = VIEW !== "fav"; if (el.hidden) return;
+  MINE.fav = MINE.fav.filter(k => BIRDS.some(b => keyOf(b) === k && mySeen(b)));
+  const cells = Array.from({length: 6}, (_, i) => { const b = BIRDS.find(x => keyOf(x) === MINE.fav[i]);
+    return b ? `<div class="tc"><img src="${b.sprite}" alt=""><span>${nmShort(b)}</span></div>` : `<div class="tc emp"><span class="q">+</span></div>`; }).join("");
+  const any = BIRDS.some(mySeen);
+  el.innerHTML = `<div class="tcard"><div class="tc-h"><span>${t("teamT")}</span><span class="tst">${t("test")}</span></div>
+    <div class="tc-b"><div class="trainer"><div class="tr-sil" aria-hidden="true"></div><span>${t("trainer")}</span></div><div class="tc-g">${cells}</div></div></div>
+    <p class="imp-t">${any ? t("favHint") : t("favNone")}</p>`;
+}
+function setView(v) {
+  VIEW = v; try { localStorage.setItem("moixodex-view", v); } catch (e) {}
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x.dataset.v === v)));
+  document.body.classList.toggle("mine", v === "mine");
+  IMP_MSG = ""; document.body.classList.remove("open"); clearHash(); impHTML(); slotsHTML(); route();
+  document.querySelectorAll(".slot").forEach(x => x.setAttribute("aria-current", "false"));
+}
+
+const TYPE_COL = {"FRUGIVORE":"#e8782a","NECTARIVORE":"#c8467f","GRANIVORE":"#a87a22","PISCIVORE":"#2f72c4","INSECTIVORE":"#7a5ab8","CARNIVORE":"#a8323a","SCAVENGER":"#7a5a3a","OMNIVORE":"#5a8a6a","FILTER FEEDER":"#c0587a",
+  "CLOUD FOREST":"#468c78","RAINFOREST":"#28825a","PARAMO":"#7d7d2e","WETLAND":"#25809a","COAST":"#3a6fa0","GRASSLAND":"#9a8a2a","MOUNTAIN":"#6a6a8a","FOREST":"#3f7a3a","ADAPTABLE":"#a05a78"};
+const IUCN = ["LC","NT","VU","EN","CR"], IUCN_NAME = {LC:"Least concern",NT:"Near threatened",VU:"Vulnerable",EN:"Endangered",CR:"Critically endangered"};
+let LANG = "en";
+try { const v = localStorage.getItem("birdex-lang"); if (v === "ca" || v === "en") LANG = v; } catch (e) {}
+const T = {
+  en: {tag:"YOUR BIRD LOG", uc:"SITE UNDER CONSTRUCTION", ucs:"(any feedback is very welcome!)", list:"DEX LIST", wing:"WINGSPAN", showNot:"SHOW NOT SEEN", tabFav:"MY TEAM", test:"TEST VERSION", teamT:"MY TEAM", trainer:"YOUR CHARACTER<br>COMING SOON", favHint:"Tap up to 6 birds you have seen to build your team.", favNone:"Load or mark some birds in MY DEX first.", team:"TEAM", tabFull:"FULL DEX", tabMine:"MY DEX", impT:"Load your bird sightings to fill your own dex. They are only saved in this browser.", user:"username", load:"LOAD", upload:"UPLOAD CSV / ZIP", ebHow:"Download your eBird data", clear:"CLEAR MY DATA", sure:"SURE? CLICK AGAIN", loading:"LOADING...", yours:"YOUR SIGHTINGS", first:"FIRST SEEN", lifeTip:"Life list files only include your first sighting. For every sighting and the map, use Download My Data.", mark:"MARK AS SEEN", unmark:"UNMARK", marked:"MARKED AS SEEN", more:"more", got:"YOUR DEX", mapAria:"Map of your sightings", errInat:"Could not load it. Check the username.", errEb:"File not recognised. Use the eBird Download My Data file.", moixo:"Moixó: Catalan for little bird", entry:"ENTRY", all:"ALL", reset:"RESET", log:"LOG", seen:"SEEN", notseen:"NOT SEEN YET", region:"REGION", regions:"REGIONS",
+       diet:"DIET", habitat:"HABITAT", size:"SIZE", weight:"WEIGHT", alt:"ALTITUDE", status:"STATUS", stats:"STATS", sightings:"SIGHTINGS", nores:"NO BIRDS MATCH THESE FILTERS.",
+       showing:"SHOWING", listed:"LISTED", photo:"PHOTO", range:"RANGE", pending:"PENDING", photoSoon:"PHOTO<br>COMING SOON", mapSoon:"RANGE MAP<br>COMING SOON",
+       yr:"YEAR-ROUND", br:"BREEDING", wi:"WINTER", bonus:"BONUS", male:"MALE", female:"FEMALE", notSeenSlot:"NOT SEEN", sort:"SORT BY", byNo:"NUMBER", byFam:"FAMILY", nonpass:"NON-PASSERINES", pass:"PASSERINES",
+       inprog:"REGISTRATION IN PROGRESS... Photos, range map and stats coming soon.", lockedA:"has not been photographed yet.", lockedB:"Next trip, maybe.",
+       scale:"Size and weight on a log scale, from the bee hummingbird to the ostrich. Altitude on a square-root scale from sea level to 5000 m.",
+       foot:"Range maps from eBird, Birds of the World, Wikimedia and IUCN · Sizes and weights from Animal Diversity Web and Wikipedia · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla · Moixó is Catalan for little bird"},
+  ca: {tag:"EL TEU REGISTRE D'OCELLS", uc:"WEB EN CONSTRUCCIÓ", ucs:"(qualsevol crítica serà ben rebuda!)", list:"LLISTA", wing:"ENVERGADURA", showNot:"MOSTRA ELS NO VISTOS", tabFav:"EL MEU EQUIP", test:"VERSIÓ DE PROVA", teamT:"EL MEU EQUIP", trainer:"EL TEU PERSONATGE<br>PROPERAMENT", favHint:"Toca fins a 6 ocells que hagis vist per fer el teu equip.", favNone:"Primer carrega o marca algun ocell a LA MEVA DEX.", team:"EQUIP", tabFull:"DEX COMPLETA", tabMine:"LA MEVA DEX", impT:"Carrega les teves observacions d'ocells per omplir la teva dex. Només es guarden en aquest navegador.", user:"nom d'usuari", load:"CARREGA", upload:"PUJA CSV / ZIP", ebHow:"Descarrega les teves dades d'eBird", clear:"ESBORRA LES MEVES DADES", sure:"SEGUR? TORNA A CLICAR", loading:"CARREGANT...", yours:"LES TEVES OBSERVACIONS", first:"VIST PER PRIMER COP", lifeTip:"La llista de vida només inclou la primera observació. Per tenir-les totes i el mapa, fes servir Download My Data.", mark:"MARCA COM A VIST", unmark:"DESMARCA", marked:"MARCAT COM A VIST", more:"més", got:"LA TEVA DEX", mapAria:"Mapa de les teves observacions", errInat:"No s'ha pogut carregar. Revisa el nom d'usuari.", errEb:"No reconec el fitxer. Fes servir el de Download My Data d'eBird.", moixo:"Moixó: ocellet, en català", entry:"FITXA", all:"TOTS", reset:"ESBORRA FILTRES", log:"VIST", seen:"VISTOS", notseen:"ENCARA NO VIST", region:"REGIÓ", regions:"REGIONS",
+       diet:"DIETA", habitat:"HÀBITAT", size:"MIDA", weight:"PES", alt:"ALTITUD", status:"ESTAT", stats:"DADES", sightings:"OBSERVACIONS", nores:"CAP OCELL NO COMPLEIX AQUESTS FILTRES.",
+       showing:"RESULTATS:", listed:"TOTAL:", photo:"FOTO", range:"DISTRIBUCIÓ", pending:"PENDENT", photoSoon:"FOTO<br>PROPERAMENT", mapSoon:"MAPA<br>PROPERAMENT",
+       yr:"TOT L'ANY", br:"ÈPOCA DE CRIA", wi:"HIVERN", bonus:"EXTRA", male:"MASCLE", female:"FEMELLA", notSeenSlot:"NO VIST", sort:"ORDENA PER", byNo:"NÚMERO", byFam:"FAMÍLIA", nonpass:"NO PASSERIFORMES", pass:"PASSERIFORMES",
+       inprog:"FITXA EN PREPARACIÓ... Aviat hi haurà la foto, el mapa i les dades.", lockedA:"encara està per descobrir.", lockedB:"Potser al proper viatge.",
+       scale:"Mida i pes en escala logarítmica, del colibrí abella a l'estruç. Altitud en escala d'arrel quadrada, del nivell del mar als 5.000 m.",
+       foot:"Mapes de distribució d'eBird, Birds of the World, Wikimedia i la UICN · Mides i pesos d'Animal Diversity Web i la Viquipèdia · Estat de conservació: Llista Vermella de la UICN<br>Fotos i sprites de @regulus_ignicapilla · Moixó vol dir ocellet"}
+};
+const t = k => T[LANG][k];
+const TYPE_CA = {"FRUGIVORE":"FRUGÍVOR","NECTARIVORE":"NECTARÍVOR","GRANIVORE":"GRANÍVOR","PISCIVORE":"PISCÍVOR","INSECTIVORE":"INSECTÍVOR","CARNIVORE":"CARNÍVOR","SCAVENGER":"CARRONYAIRE","OMNIVORE":"OMNÍVOR","FILTER FEEDER":"FILTRADOR",
+  "CLOUD FOREST":"BOSC NEBULÓS","RAINFOREST":"SELVA TROPICAL","PARAMO":"PÀRAMO","WETLAND":"ZONA HUMIDA","COAST":"COSTA","GRASSLAND":"ESPAIS OBERTS","MOUNTAIN":"MUNTANYA","FOREST":"BOSC","ADAPTABLE":"ADAPTABLE"};
+const REG_CA = {"CENTRAL AMERICA":"AMÈRICA CENTRAL","SOUTH AMERICA":"AMÈRICA DEL SUD","NORTH AMERICA":"AMÈRICA DEL NORD","EUROPE":"EUROPA","AFRICA":"ÀFRICA","ASIA":"ÀSIA","OCEANIA":"OCEANIA"};
+const IUCN_CA = {LC:"Preocupació menor",NT:"Quasi amenaçada",VU:"Vulnerable",EN:"En perill",CR:"En perill crític"};
+const BIN_CA = {size:["Molt petit (menys de 15 cm)","Petit (15-40 cm)","Mitjà (40-80 cm)","Gran (més de 80 cm)"], weight:["Menys de 10 g","10-100 g","100 g-1 kg","Més d'1 kg"],
+  alt:["Terres baixes (0-500 m)","Mitja muntanya (500-1.500 m)","Muntanya (1.500-2.500 m)","Alta muntanya (més de 2.500 m)"]};
+const tType = x => LANG === "ca" ? (TYPE_CA[x] || x) : x;
+const tReg = x => LANG === "ca" ? (REG_CA[x] || x) : x;
+const tIucn = c => LANG === "ca" ? IUCN_CA[c] : IUCN_NAME[c];
+const nm = b => LANG === "ca" ? b.cat : b.en;
+const nmShort = b => LANG === "ca" ? (b.short_ca || b.cat) : b.short;
+const altNames = b => LANG === "ca" ? `${b.en} (EN) · ${b.local} (${b.localLang})` : `${b.cat} (CAT) · ${b.local} (${b.localLang})`;
+const factOf = (b, k) => LANG === "ca" && b[k + "_ca"] ? b[k + "_ca"] : b[k];
+function setLang(l) {
+  LANG = l; try { localStorage.setItem("birdex-lang", LANG); } catch (err) {}
+  const menu = document.getElementById("lang-menu"), btn = document.getElementById("lang-btn");
+  menu.hidden = true; btn.setAttribute("aria-expanded", "false"); applyStatic(); slotsHTML(); route(); btn.focus();
+}
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("lang-menu").hidden || e.target.closest("select")) return;
+  if (e.key === "Escape" && document.body.classList.contains("open")) { closeEntry(); return; }
+  if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && (document.body.classList.contains("open") || !MOB())) { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
+});
+let tx0 = null, ty0 = null;
+document.addEventListener("touchstart", e => { if (!e.target.closest("#entry-case")) return; tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; }, {passive: true});
+document.addEventListener("touchend", e => { if (tx0 === null) return; const dx = e.changedTouches[0].clientX - tx0, dy = e.changedTouches[0].clientY - ty0; tx0 = null;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) step(dx < 0 ? 1 : -1); }, {passive: true});
+document.addEventListener("keydown", e => {
+  const menu = document.getElementById("lang-menu"); if (menu.hidden) return;
+  const items = [...menu.querySelectorAll("li")], i = items.indexOf(document.activeElement);
+  if (e.key === "Escape") { menu.hidden = true; document.getElementById("lang-btn").setAttribute("aria-expanded", "false"); document.getElementById("lang-btn").focus(); }
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus(); }
+  else if ((e.key === "Enter" || e.key === " ") && i >= 0) { e.preventDefault(); setLang(items[i].dataset.lang); }
+});
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  document.getElementById("t-tag").textContent = t("tag"); document.getElementById("t-uc").textContent = t("uc"); document.getElementById("t-ucs").textContent = t("ucs"); document.getElementById("t-list").textContent = t("list"); document.getElementById("tab-full").textContent = t("tabFull"); document.getElementById("tab-mine").textContent = t("tabMine"); document.getElementById("tab-fav").innerHTML = t("tabFav") + ` <span class="tst">${t("test")}</span>`; impHTML();
+  document.getElementById("t-foot").innerHTML = t("foot");
+  const cur = document.querySelector(`.lang-menu li[data-lang="${LANG}"]`);
+  document.getElementById("lang-cur").innerHTML = cur.querySelector("svg").outerHTML + (LANG === "ca" ? "CA" : "EN");
+  document.querySelectorAll(".lang-menu li").forEach(x => x.setAttribute("aria-selected", String(x.dataset.lang === LANG)));
+}
+const logpos = (v, lo, hi) => Math.log(v / lo) / Math.log(hi / lo);
+const altpos = h => Math.sqrt(h / 5000);
+const DIETS = ["FILTER FEEDER","FRUGIVORE","NECTARIVORE","GRANIVORE","INSECTIVORE","PISCIVORE","CARNIVORE","SCAVENGER","OMNIVORE"];
+const REGIONS = ["CENTRAL AMERICA","SOUTH AMERICA","NORTH AMERICA","EUROPE","AFRICA","ASIA","OCEANIA"];
+const BINS = {
+  size:   [["XS", "Tiny (under 15 cm)", 0, 15], ["S", "Small (15-40 cm)", 15, 40], ["M", "Medium (40-80 cm)", 40, 80], ["L", "Large (over 80 cm)", 80, 1e9]],
+  weight: [["XS", "Under 10 g", 0, 10], ["S", "10-100 g", 10, 100], ["M", "100 g-1 kg", 100, 1000], ["L", "Over 1 kg", 1000, 1e9]],
+  alt:    [["LOW", "Lowland (0-500 m)", 0, 500], ["FOOT", "Foothill (500-1500 m)", 500, 1500], ["MON", "Montane (1500-2500 m)", 1500, 2500], ["HIGH", "Highland (over 2500 m)", 2500, 1e9]]
+};
+const PASSERINE = new Set(["Regulidae","Icteridae","Tyrannidae","Thraupidae","Turdidae","Troglodytidae","Parulidae","Corvidae","Fringillidae","Passerellidae","Cardinalidae","Hirundinidae","Cinclidae","Ptiliogonatidae","Vireonidae","Pipridae","Cotingidae","Thamnophilidae","Furnariidae","Paridae","Aegithalidae","Sylviidae","Muscicapidae","Laniidae","Sturnidae","Passeridae","Motacillidae","Alaudidae","Emberizidae"]);
+let SORT = "no"; try { const v = localStorage.getItem("birdex-sort"); if (v === "fam") SORT = v; } catch (e) {}
+const F = {log: "", region: "", diet: "", habitat: "", size: "", weight: "", alt: "", status: ""};
+const overlaps = (r, lo, hi) => r[1] >= lo && r[0] < hi;
+function matches(b) {
+  if (VIEW === "fav" && !mySeen(b)) return false;
+  if (VIEW === "mine" && !SHOWNOT && !mySeen(b)) return false;
+  if (F.log === "SEEN" && !isSeen(b)) return false;
+  if (F.log === "NOT SEEN" && isSeen(b)) return false;
+  if (F.region && !b.regions.includes(F.region)) return false;
+  if (F.diet && !b.types.includes(F.diet)) return false;
+  if (F.habitat && !b.types.includes(F.habitat)) return false;
+  for (const k of ["size", "weight", "alt"]) if (F[k]) { if (!b[k]) return false; const bin = BINS[k].find(x => x[0] === F[k]); if (!overlaps(b[k], bin[2], bin[3])) return false; }
+  if (F.status && b.status !== F.status) return false;
+  return true;
+}
+function filtersHTML() {
+  const types = BIRDS.flatMap(b => b.types);
+  const diets = DIETS.filter(t => types.includes(t)), habs = [...new Set(types.filter(t => !DIETS.includes(t)))].sort();
+  const present = new Set(BIRDS.flatMap(b => b.regions)), regs = REGIONS.filter(r => present.has(r));
+  const sel = (key, label, opts) => `<label class="flt"><span>${label}</span><select data-f="${key}" class="${F[key] ? "on" : ""}">
+    <option value="">${t("all")}</option>${opts.map(([v, t]) => `<option value="${v}" ${F[key] === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+  const any = Object.values(F).some(Boolean);
+  document.getElementById("filters").innerHTML =
+    `<label class="flt"><span>${t("sort")}</span><select id="sort" class="${SORT !== "no" ? "on" : ""}"><option value="no" ${SORT === "no" ? "selected" : ""}>${t("byNo")}</option><option value="fam" ${SORT === "fam" ? "selected" : ""}>${t("byFam")}</option></select></label>` + (VIEW === "mine" || BIRDS.some(b => b.unseen) ? sel("log", t("log"), [["SEEN", t("seen")], ["NOT SEEN", t("notseen")]]) : "") + sel("region", t("region"), regs.map(r => [r, tReg(r)])) + sel("diet", t("diet"), diets.map(d => [d, tType(d)])) + sel("habitat", t("habitat"), habs.map(h => [h, tType(h)])) +
+    ["size", "weight", "alt"].map(k => sel(k, t(k), BINS[k].map((x, i) => [x[0], LANG === "ca" ? BIN_CA[k][i] : x[1]]))).join("") +
+    sel("status", t("status"), IUCN.map(c => [c, tIucn(c)])) +
+    `<button class="reset" type="button" id="reset" ${any ? "" : "disabled"}>${t("reset")}</button>`;
+}
+function sprHTML(b) {
+  const img = `<img class="e-spr" id="e-spr-img" src="${b.sprite}" alt="Pixel sprite of a male ${b.en}">`;
+  if (VIEW !== "full" && !mySeen(b)) return `<div class="spr-wrap"><div class="e-spr silbox"><img src="${b.sprite}" alt="Silhouette of the ${b.en}, not seen yet"></div></div>`;
+  if (!b.spriteF) return `<div class="spr-wrap">${img}</div>`;
+  return `<div class="spr-wrap">${img}<div class="sexes" role="group" aria-label="Sex">
+    <button class="sex" type="button" data-sex="m" aria-pressed="true">${t("male")}</button><button class="sex" type="button" data-sex="f" aria-pressed="false">${t("female")}</button></div></div>`;
+}
+function logHTML(b) {
+  if (b.unseen || !b.seen || !b.seen.length) return `<div class="log"><h3>${t("sightings")}</h3><p class="notseen-tag">${t("notseen")}</p></div>`;
+  return `<div class="log"><h3>${t("sightings")}</h3><ul>${b.seen.map(s => `<li><time datetime="${s[0]}">${s[0]}</time><span>${s[1]}</span></li>`).join("")}</ul></div>`;
+}
+const rng = a => a[0] === a[1] ? String(a[0]) : `${a[0]}-${a[1]}`;
+
+function bar(a, b) {
+  const s = Math.floor(a * 17), e = Math.max(s + 1, Math.ceil(b * 17));
+  return '<div class="bar" aria-hidden="true">' + Array.from({length:17}, (_, i) => `<i class="${i >= s && i < e ? "on" : ""}"></i>`).join("") + "</div>";
+}
+function slotsHTML() {
+  filtersHTML();
+  const any = Object.values(F).some(Boolean);
+  const byNo = Object.fromEntries(BIRDS.map(b => [b.no, b]));
+  let h = "", shown = 0;
+  const slotB = b => `<button class="slot${slotCls(b)}" type="button" id="s-${b.no}" data-no="${b.no}" ${matches(b) ? "" : "hidden"}>
+        <span class="no" data-ns="${t("notSeenSlot")}">Nº ${b.no}</span><img src="${b.sprite}" alt=""><span class="nm">${nmShort(b)}</span></button>`;
+  if (SORT === "fam") {
+    for (const ps of [false, true]) {
+      const grp = BIRDS.filter(b => PASSERINE.has(b.family) === ps && matches(b));
+      if (!grp.length) continue;
+      h += `<div class="grp">${t(ps ? "pass" : "nonpass")}</div>`;
+      for (const fam of [...new Set(grp.map(b => b.family))].sort()) {
+        h += `<div class="fam">${fam}</div>`;
+        for (const b of grp.filter(b => b.family === fam).sort((a, c) => a.no.localeCompare(c.no))) { h += slotB(b); shown++; }
+      }
+    }
+  } else
+  for (let n = 1; n <= TOTAL_SLOTS; n++) {
+    const no = String(n).padStart(3, "0"), b = byNo[no];
+    if (b) { const ok = matches(b); shown += ok;
+      h += `<button class="slot${slotCls(b)}" type="button" id="s-${no}" data-no="${no}" ${ok ? "" : "hidden"}>
+        <span class="no" data-ns="${t("notSeenSlot")}">Nº ${no}</span><img src="${b.sprite}" alt=""><span class="nm">${nmShort(b)}</span></button>`; }
+    else h += `<button class="slot unk" type="button" id="s-${no}" data-no="${no}" ${any || VIEW === "fav" || (VIEW === "mine" && !SHOWNOT) ? "hidden" : ""}>
+        <span class="no">Nº ${no}</span><span class="q">?</span><span class="nm">???</span></button>`;
+  }
+  if (any && !shown) h += `<div class="nores">${t("nores")}</div>`;
+  document.getElementById("slots").innerHTML = h;
+  const nSeen = BIRDS.filter(b => !b.unseen).length;
+  teamHTML(); document.getElementById("filters").hidden = VIEW === "fav";
+  if (VIEW === "fav") { document.getElementById("counter").textContent = `${t("team")}: ${MINE.fav.length}/6`; return; }
+  if (VIEW === "mine" && !any) { document.getElementById("counter").textContent = `${t("got")}: ${BIRDS.filter(mySeen).length}/${BIRDS.length}`; return; }
+  document.getElementById("counter").textContent = any ? `${t("showing")} ${shown}/${BIRDS.length}` : (LANG === "ca" ? `VISTOS: ${nSeen} · TOTAL: ${BIRDS.length}` : `${t("seen")} ${nSeen} · ${t("listed")} ${BIRDS.length}`);
+}
+function entryHTML(no) {
+  const b = BIRDS.find(x => x.no === no);
+  document.getElementById("cap-no").textContent = t("entry") + " Nº " + no;
+  document.querySelectorAll(".slot").forEach(s => s.setAttribute("aria-current", s.dataset.no === no ? "true" : "false"));
+  const el = document.getElementById("entry");
+  if (!b) { el.innerHTML = `<div class="locked"><div class="big">???</div><div>Nº ${no} ${t("lockedA")}</div><div class="scale">${t("lockedB")}</div></div>`; return; }
+  if (b.pending) { el.innerHTML = `<article class="entry">
+    <div class="e-head"><div>
+      <div class="e-no">Nº ${b.no} · ${b.regions.length > 1 ? t("regions") : t("region")}: ${b.regions.map(tReg).join(" · ")}</div>
+      <h2 class="e-en">${nm(b)}</h2>
+      <div class="e-la">${b.la}</div>
+      <div class="e-alt">${altNames(b)}</div>
+    </div>${sprHTML(b)}</div>
+    <div class="types">${b.types.map(t => `<span class="type" style="background:${TYPE_COL[t] || "#555"}">${tType(t)}</span>`).join("")}</div>
+    <p class="fact">${t("inprog")}</p>
+    ${VIEW === "mine" ? myLogHTML(b) : logHTML(b)}
+  </article>`; return; }
+  const iu = IUCN.indexOf(b.status);
+  el.innerHTML = `<article class="entry">
+    <div class="e-head"><div>
+      <div class="e-no">Nº ${b.no} · ${b.regions.length > 1 ? t("regions") : t("region")}: ${b.regions.map(tReg).join(" · ")}</div>
+      <h2 class="e-en">${nm(b)}</h2>
+      <div class="e-la">${b.la}</div>
+      <div class="e-alt">${altNames(b)}</div>
+    </div>${sprHTML(b)}</div>
+    <div class="types">${b.types.map(t => `<span class="type" style="background:${TYPE_COL[t] || "#555"}">${tType(t)}</span>`).join("")}</div>
+    <p class="fact">${factOf(b, "fact")}</p>
+    ${b.fact2 ? `<p class="fact bonus"><span class="bn">${t("bonus")}</span> ${factOf(b, "fact2")}</p>` : ""}
+    <div class="media">
+      ${b.photo ? `<figure><img src="${b.photo}" alt="${b.en} photographed by @regulus_ignicapilla"><figcaption>${t("photo")} · ${b.photoPlace}</figcaption></figure>`
+                : `<figure><div class="ph-wait">${t("photoSoon")}</div><figcaption>${t("photo")} · ${t("pending")}</figcaption></figure>`}
+      ${b.map ? `<figure><img src="${b.map}" alt="Range map of the ${b.en}"><figcaption>${t("range")} · ${b.mapSrc}${b.seasonal ? `<span class="legend"><i style="background:#ffd640"></i>${t("yr")} <i style="background:#ff8c28"></i>${t("br")} <i style="background:#96cdff"></i>${t("wi")}</span>` : ""}</figcaption></figure>`
+              : `<figure><div class="ph-wait">${t("mapSoon")}</div><figcaption>${t("range")} · ${t("pending")}</figcaption></figure>`}
+    </div>
+    <div class="stats" role="list">
+      <h3 class="sec">${t("stats")}</h3>
+      <div class="stat" role="listitem"><span class="k">${t("size")}</span>${bar(logpos(b.size[0],5,275), logpos(b.size[1],5,275))}<span class="v">${rng(b.size)} cm</span></div>
+      <div class="stat" role="listitem"><span class="k">${t("weight")}</span>${bar(logpos(b.weight[0],2,150000), logpos(b.weight[1],2,150000))}<span class="v">${rng(b.weight)} g</span></div>
+      ${b.alt ? `<div class="stat" role="listitem"><span class="k">${t("alt")}</span>${bar(altpos(b.alt[0]), altpos(b.alt[1]))}<span class="v">${rng(b.alt)} m</span></div>` : ""}
+      ${b.wingspan ? `<div class="stat" role="listitem"><span class="k">${t("wing")}</span>${bar(logpos(b.wingspan[0],5,275), logpos(b.wingspan[1],5,275))}<span class="v">${rng(b.wingspan)} cm</span></div>` : ""}
+      <div class="stat" role="listitem"><span class="k">${t("status")}</span><span class="iucn">${IUCN.map((c, i) => `<i class="${i === iu ? "on" : ""}">${c}</i>`).join("")}</span><span class="v">${tIucn(b.status)}</span></div>
+      <div class="scale">${t("scale")}</div>
+    </div>
+    ${VIEW === "mine" ? myLogHTML(b) : logHTML(b)}
+    ${b.links.length ? `<div class="links">${b.links.map(l => `<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div>` : ""}
+  </article>`;
+}
+const MOB = () => matchMedia("(max-width:860px)").matches;
+function openEntry() { if (MOB()) document.body.classList.add("open"); }
+const clearHash = () => { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { location.hash = ""; } };
+function closeEntry() { document.body.classList.remove("open"); const no = (/^#n(\d{3})$/.exec(location.hash) || [])[1]; clearHash();
+  document.querySelectorAll(".slot").forEach(x => x.setAttribute("aria-current", "false")); const s = no && document.getElementById("s-" + no); if (s) s.focus({preventScroll: true}); }
+function step(d) {
+  const list = [...document.querySelectorAll(".slot:not([hidden]):not(.unk)")].map(x => x.dataset.no); if (!list.length) return;
+  const cur = (/^#n(\d{3})$/.exec(location.hash) || [, list[0]])[1]; let i = list.indexOf(cur);
+  i = i < 0 ? 0 : (i + d + list.length) % list.length; location.hash = "n" + list[i];
+  document.getElementById("entry-case").scrollTop = 0;
+}
+function route() {
+  const m = /^#n(\d{3})$/.exec(location.hash);
+  const no = m ? m[1] : BIRDS[0].no; entryHTML(no);
+  const cv = document.getElementById("mymap"), bb = BIRDS.find(x => x.no === no); if (cv && bb) drawMyMap(cv, bb);
+  if (m) openEntry();
+}
+document.addEventListener("click", e => {
+  const s = e.target.closest(".slot");
+  if (s && VIEW === "fav") { const b = BIRDS.find(x => x.no === s.dataset.no); if (!b) return; const k = keyOf(b);
+    if (MINE.fav.includes(k)) MINE.fav = MINE.fav.filter(x => x !== k); else if (MINE.fav.length < 6) MINE.fav = [...MINE.fav, k];
+    saveMine(); slotsHTML(); document.getElementById("s-" + b.no)?.focus(); return; }
+  if (s) { location.hash = "n" + s.dataset.no; openEntry(); return; }
+  if (e.target.closest("#shownot")) { SHOWNOT = !SHOWNOT; try { localStorage.setItem("moixodex-shownot", SHOWNOT ? "1" : "0"); } catch (er) {} impHTML(); slotsHTML(); return; }
+  const tb = e.target.closest(".tab"); if (tb) { setView(tb.dataset.v); return; }
+  if (e.target.closest("#eb-b")) { document.getElementById("eb-f").click(); return; }
+  const cm = e.target.closest("#clear-mine");
+  if (cm) { if (cm.dataset.sure) { MINE = {obs: {}, manual: [], inat: "", fav: []}; saveMine(); IMP_MSG = ""; impHTML(); slotsHTML(); route(); } else { cm.dataset.sure = "1"; cm.textContent = t("sure"); setTimeout(() => { if (cm.isConnected) { delete cm.dataset.sure; cm.textContent = t("clear"); } }, 4000); } return; }
+  const mk = e.target.closest("#mark");
+  if (mk) { const b = BIRDS.find(x => x.no === (/^#n(\d{3})$/.exec(location.hash) || [, BIRDS[0].no])[1]), k = keyOf(b);
+    MINE.manual = MINE.manual.includes(k) ? MINE.manual.filter(x => x !== k) : [...MINE.manual, k]; saveMine(); impHTML(); slotsHTML(); route(); return; }
+  if (e.target.closest("#prev")) { step(-1); return; }
+  if (e.target.closest("#next")) { step(1); return; }
+  if (e.target.closest("#close")) { closeEntry(); return; }
+  const sx = e.target.closest(".sex");
+  if (sx) { const b = BIRDS.find(x => x.no === (/^#n(\d{3})$/.exec(location.hash) || [, BIRDS[0].no])[1]); const f = sx.dataset.sex === "f";
+    const im = document.getElementById("e-spr-img"); im.src = (f ? b.spriteF : b.sprite); im.alt = `Pixel sprite of a ${f ? "female" : "male"} ${b.en}`;
+    document.querySelectorAll(".sex").forEach(x => x.setAttribute("aria-pressed", String(x === sx))); return; }
+  const menu = document.getElementById("lang-menu"), btn = document.getElementById("lang-btn");
+  if (e.target.closest("#lang-btn")) { const open = menu.hidden; menu.hidden = !open; btn.setAttribute("aria-expanded", String(open)); if (open) menu.querySelector('[aria-selected="true"]').focus(); return; }
+  const lb = e.target.closest(".lang-menu li");
+  if (lb) { setLang(lb.dataset.lang); return; }
+  if (!menu.hidden && !e.target.closest("#lang")) { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+  if (e.target.closest("#reset")) { for (const k in F) F[k] = ""; slotsHTML(); document.querySelector(".flt select")?.focus(); }
+});
+document.addEventListener("submit", e => { if (e.target.id === "inat-f") { e.preventDefault(); loadINat(document.getElementById("inat-u").value); } });
+document.addEventListener("change", e => {
+  if (e.target.id === "eb-f") { const f = e.target.files[0]; if (f) loadEbird(f); return; }
+  if (e.target.id === "sort") { SORT = e.target.value; try { localStorage.setItem("birdex-sort", SORT); } catch (er) {} slotsHTML(); document.getElementById("sort")?.focus(); return; }
+  const s = e.target.closest("select[data-f]"); if (!s) return;
+  F[s.dataset.f] = s.value; slotsHTML(); document.querySelector(`select[data-f="${s.dataset.f}"]`)?.focus();
+});
+addEventListener("hashchange", route);
+document.body.classList.toggle("mine", VIEW === "mine"); document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x.dataset.v === VIEW)));
+applyStatic(); slotsHTML(); route();
+</script>
+</body>
+</html>
