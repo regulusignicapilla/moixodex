@@ -1,4 +1,4 @@
-<!doctype html>
+!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -61,7 +61,14 @@ h1{font-family:var(--pixel);font-size:clamp(22px,4vw,34px);margin:0;letter-spaci
 .screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
 
 /* slot grid */
-.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:8px;padding:12px 12px 0;align-items:end}
+.filters{padding:12px 12px 0;display:grid;gap:10px}
+.ftog{justify-self:start;display:inline-flex;gap:10px;align-items:center}
+.ftog .pm{font-size:14px;line-height:1}
+.fbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:8px;align-items:end}.fbody[hidden]{display:none}
+.recap{position:fixed;inset:0;z-index:50;background:rgba(10,8,10,.82);display:grid;place-items:center;padding:16px}.recap[hidden]{display:none}
+.recap-box{display:grid;gap:12px;justify-items:center;max-width:min(540px,100%);width:100%}
+.recap canvas{width:100%;height:auto;border-radius:10px;box-shadow:0 0 0 4px var(--bezel),0 0 0 8px var(--ink);image-rendering:pixelated}
+.recap-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .flt{display:grid;gap:4px;min-width:0}.flt span{font-family:var(--pixel);font-size:9px;color:var(--phosphor);opacity:.75}
 .flt select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;font-family:var(--crt);font-size:18px;color:var(--phosphor);background:var(--screen-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%238cff96'/%3E%3C/svg%3E") no-repeat right 8px center;border:2px solid var(--phosphor-dim);border-radius:4px;padding:4px 24px 4px 8px;cursor:pointer}
 .flt select.on{border-color:var(--phosphor);box-shadow:0 0 0 1px var(--phosphor)}
@@ -212,13 +219,15 @@ footer{font-family:var(--pixel);font-size:9px;color:#ffe9a0;line-height:1.8;text
     </section>
   </main>
 
-  <footer id="t-foot">Range maps from eBird and Birds of the World · Sizes and weights from Animal Diversity Web and Wikipedia · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla</footer>
+  <div class="recap" id="recap" hidden role="dialog" aria-modal="true" aria-label="Recap"><div class="recap-box"><canvas id="recap-cv" width="1080" height="1350"></canvas>
+    <div class="recap-row"><button class="chip" type="button" id="recap-share"></button><button class="chip" type="button" id="recap-save"></button><button class="chip" type="button" id="recap-x"></button></div></div></div>
+  <footer id="t-foot">Range maps from eBird and Birds of the World · Sizes from Animal Diversity Web and Wikipedia · Weights and diets from AVONET (Tobias et al. 2022) · Altitudes from the global bird elevation database (Univ. of Copenhagen) · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla</footer>
 </div>
 
 <script src="data/land.js"></script>
 <script src="data/birds.js"></script>
 <script>
-const TOTAL_SLOTS = 32;
+const TOTAL_SLOTS = 44;
 /* ---- MY DEX: the visitor's own sightings, loaded from iNaturalist or an eBird export, kept only in this browser ---- */
 let VIEW = "full"; try { const v = localStorage.getItem("moixodex-view"); if (v === "mine" || v === "fav") VIEW = v; } catch (e) {}
 let SHOWNOT = true; try { SHOWNOT = localStorage.getItem("moixodex-shownot") !== "0"; } catch (e) {}
@@ -248,7 +257,7 @@ function impHTML() {
   el.innerHTML = `<p class="imp-t">${t("impT")}</p>
     <form class="imp-row" id="inat-f"><label for="inat-u">iNaturalist</label><input id="inat-u" placeholder="${t("user")}" value="${esc(MINE.inat)}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="chip" type="submit">${t("load")}</button></form>
     <div class="imp-row"><label for="eb-f">eBird</label><input type="file" id="eb-f" accept=".csv,.zip" hidden><button class="chip" type="button" id="eb-b">${t("upload")}</button><a class="imp-a" href="https://ebird.org/downloadMyData" target="_blank" rel="noopener">${t("ebHow")}</a></div>
-    <div class="imp-row"><button class="chip" type="button" id="shownot" aria-pressed="${SHOWNOT}">${t("showNot")}</button><button class="chip" type="button" id="clear-mine" ${nObs || MINE.manual.length ? "" : "disabled"}>${t("clear")}</button><span class="imp-s" id="imp-s" role="status">${esc(IMP_MSG || sum)}</span></div>`;
+    <div class="imp-row"><button class="chip" type="button" id="recap-b" ${nSp ? "" : "disabled"}>${t("recap")}</button><button class="chip" type="button" id="shownot" aria-pressed="${SHOWNOT}">${t("showNot")}</button><button class="chip" type="button" id="clear-mine" ${nObs || MINE.manual.length ? "" : "disabled"}>${t("clear")}</button><span class="imp-s" id="imp-s" role="status">${esc(IMP_MSG || sum)}</span></div>`;
 }
 const setMsg = m => { IMP_MSG = m; const s = document.getElementById("imp-s"); if (s) s.textContent = m; };
 async function loadINat(user) {
@@ -350,6 +359,43 @@ function teamHTML() {
     <div class="tc-b"><div class="trainer"><div class="tr-sil" aria-hidden="true"></div><span>${t("trainer")}</span></div><div class="tc-g">${cells}</div></div></div>
     <p class="imp-t">${any ? t("favHint") : t("favNone")}</p>`;
 }
+const loadImg = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+async function drawRecap() {
+  const seen = BIRDS.filter(mySeen), N = seen.length, cv = document.getElementById("recap-cv"), g = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  try { await document.fonts.load('40px "Press Start 2P"'); } catch (e) {}
+  const ims = (await Promise.all(seen.map(b => loadImg(b.sprite)))).filter(Boolean);
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = "#cc202a"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#e8e8e2"; g.fillRect(36, 150, W - 72, H - 220); g.fillStyle = "#0e1610"; g.fillRect(60, 174, W - 120, H - 268);
+  g.fillStyle = "#fff"; g.font = '44px "Press Start 2P"'; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText("MOIXÓDEX", 60, 82);
+  g.fillStyle = "#ffd640"; g.font = '20px "Press Start 2P"'; g.textAlign = "right"; g.fillText(t("got"), W - 60, 82);
+  // screen area and a free box in the middle for the number
+  const X0 = 80, Y0 = 194, X1 = W - 80, Y1 = H - 114, cx = (X0 + X1) / 2, cy = (Y0 + Y1) / 2, bw = 420, bh = 250;
+  let s = 200, cells = [];
+  for (; s >= 36; s -= 4) {
+    cells = []; const cols = Math.floor((X1 - X0) / s), rows = Math.floor((Y1 - Y0) / s), ox = X0 + (X1 - X0 - cols * s) / 2, oy = Y0 + (Y1 - Y0 - rows * s) / 2;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const x = ox + c * s, y = oy + r * s;
+      if (x + s > cx - bw / 2 && x < cx + bw / 2 && y + s > cy - bh / 2 && y < cy + bh / 2) continue; cells.push([x, y]); }
+    if (cells.length >= N) break;
+  }
+  cells.sort((a, b) => Math.hypot(a[0] + s / 2 - cx, (a[1] + s / 2 - cy) * 1.25) - Math.hypot(b[0] + s / 2 - cx, (b[1] + s / 2 - cy) * 1.25));
+  const pick = cells.slice(0, ims.length); let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = pick.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pick[i], pick[j]] = [pick[j], pick[i]]; }
+  ims.forEach((im, i) => { const k = Math.max(1, Math.floor(s * .92 / 36)), d = 36 * k, [x, y] = pick[i]; g.drawImage(im, Math.round(x + (s - d) / 2), Math.round(y + (s - d) / 2), d, d); });
+  g.textAlign = "center"; g.fillStyle = "#14141a"; g.font = '120px "Press Start 2P"'; g.fillText(String(N), cx + 6, cy - 20 + 6);
+  g.fillStyle = "#ffd640"; g.fillText(String(N), cx, cy - 20);
+  const fam = new Set(seen.map(b => b.family).filter(Boolean)).size;
+  g.fillStyle = "#8cff96"; g.font = '26px "Press Start 2P"'; g.fillText(`${t("recapSp")} · ${fam} ${t("recapFam")}`, cx, cy + 80);
+  g.fillStyle = "#fff"; g.font = '22px "Press Start 2P"'; g.fillText(t("tag"), cx, H - 50);
+}
+async function openRecap() {
+  const r = document.getElementById("recap"); r.hidden = false;
+  document.getElementById("recap-save").textContent = t("recapSave"); document.getElementById("recap-x").textContent = t("recapClose");
+  const sh = document.getElementById("recap-share"); sh.textContent = t("recapShare"); sh.hidden = !navigator.canShare;
+  await drawRecap(); document.getElementById("recap-x").focus();
+}
+function recapBlob() { return new Promise(res => document.getElementById("recap-cv").toBlob(res, "image/png")); }
 function setView(v) {
   VIEW = v; try { localStorage.setItem("moixodex-view", v); } catch (e) {}
   document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x.dataset.v === v)));
@@ -358,30 +404,30 @@ function setView(v) {
   document.querySelectorAll(".slot").forEach(x => x.setAttribute("aria-current", "false"));
 }
 
-const TYPE_COL = {"FRUGIVORE":"#e8782a","NECTARIVORE":"#c8467f","GRANIVORE":"#a87a22","PISCIVORE":"#2f72c4","INSECTIVORE":"#7a5ab8","CARNIVORE":"#a8323a","SCAVENGER":"#7a5a3a","OMNIVORE":"#5a8a6a","FILTER FEEDER":"#c0587a",
+const TYPE_COL = {"FRUGIVORE":"#e8782a","NECTARIVORE":"#c8467f","GRANIVORE":"#a87a22","PISCIVORE":"#2f72c4","INSECTIVORE":"#7a5ab8","CARNIVORE":"#a8323a","SCAVENGER":"#7a5a3a","OMNIVORE":"#5a8a6a","FILTER FEEDER":"#c0587a","INVERTIVORE":"#7a5ab8","AQUATIC PREDATOR":"#2f72c4","VERTIVORE":"#a8323a","HERBIVORE":"#6a9a2a",
   "CLOUD FOREST":"#468c78","RAINFOREST":"#28825a","PARAMO":"#7d7d2e","WETLAND":"#25809a","COAST":"#3a6fa0","GRASSLAND":"#9a8a2a","MOUNTAIN":"#6a6a8a","FOREST":"#3f7a3a","ADAPTABLE":"#a05a78"};
 const IUCN = ["LC","NT","VU","EN","CR"], IUCN_NAME = {LC:"Least concern",NT:"Near threatened",VU:"Vulnerable",EN:"Endangered",CR:"Critically endangered"};
 let LANG = "en";
 try { const v = localStorage.getItem("birdex-lang"); if (v === "ca" || v === "en") LANG = v; } catch (e) {}
 const T = {
-  en: {tag:"YOUR BIRD LOG", uc:"SITE UNDER CONSTRUCTION", ucs:"(any feedback is very welcome!)", list:"DEX LIST", wing:"WINGSPAN", showNot:"SHOW NOT SEEN", tabFav:"MY TEAM", test:"TEST VERSION", teamT:"MY TEAM", trainer:"YOUR CHARACTER<br>COMING SOON", favHint:"Tap up to 6 birds you have seen to build your team.", favNone:"Load or mark some birds in MY DEX first.", team:"TEAM", tabFull:"FULL DEX", tabMine:"MY DEX", impT:"Load your bird sightings to fill your own dex. They are only saved in this browser.", user:"username", load:"LOAD", upload:"UPLOAD CSV / ZIP", ebHow:"Download your eBird data", clear:"CLEAR MY DATA", sure:"SURE? CLICK AGAIN", loading:"LOADING...", yours:"YOUR SIGHTINGS", first:"FIRST SEEN", lifeTip:"Life list files only include your first sighting. For every sighting and the map, use Download My Data.", mark:"MARK AS SEEN", unmark:"UNMARK", marked:"MARKED AS SEEN", more:"more", got:"YOUR DEX", mapAria:"Map of your sightings", errInat:"Could not load it. Check the username.", errEb:"File not recognised. Use the eBird Download My Data file.", moixo:"Moixó: Catalan for little bird", entry:"ENTRY", all:"ALL", reset:"RESET", log:"LOG", seen:"SEEN", notseen:"NOT SEEN YET", region:"REGION", regions:"REGIONS",
+  en: {tag:"YOUR BIRD LOG", uc:"SITE UNDER CONSTRUCTION", ucs:"(any feedback is very welcome!)", list:"DEX LIST", wing:"WINGSPAN", showNot:"SHOW NOT SEEN", filters:"FILTERS", recap:"MY RECAP", recapSp:"SPECIES", recapFam:"FAMILIES", recapSave:"SAVE IMAGE", recapShare:"SHARE", recapClose:"CLOSE", recapNone:"Load or mark some birds first.", tabFav:"MY TEAM", test:"TEST VERSION", teamT:"MY TEAM", trainer:"YOUR CHARACTER<br>COMING SOON", favHint:"Tap up to 6 birds you have seen to build your team.", favNone:"Load or mark some birds in MY DEX first.", team:"TEAM", tabFull:"FULL DEX", tabMine:"MY DEX", impT:"Load your bird sightings to fill your own dex. They are only saved in this browser.", user:"username", load:"LOAD", upload:"UPLOAD CSV / ZIP", ebHow:"Download your eBird data", clear:"CLEAR MY DATA", sure:"SURE? CLICK AGAIN", loading:"LOADING...", yours:"YOUR SIGHTINGS", first:"FIRST SEEN", lifeTip:"Life list files only include your first sighting. For every sighting and the map, use Download My Data.", mark:"MARK AS SEEN", unmark:"UNMARK", marked:"MARKED AS SEEN", more:"more", got:"YOUR DEX", mapAria:"Map of your sightings", errInat:"Could not load it. Check the username.", errEb:"File not recognised. Use the eBird Download My Data file.", moixo:"Moixó: Catalan for little bird", entry:"ENTRY", all:"ALL", reset:"RESET", log:"LOG", seen:"SEEN", notseen:"NOT SEEN YET", region:"REGION", regions:"REGIONS",
        diet:"DIET", habitat:"HABITAT", size:"SIZE", weight:"WEIGHT", alt:"ALTITUDE", status:"STATUS", stats:"STATS", sightings:"SIGHTINGS", nores:"NO BIRDS MATCH THESE FILTERS.",
        showing:"SHOWING", listed:"LISTED", photo:"PHOTO", range:"RANGE", pending:"PENDING", photoSoon:"PHOTO<br>COMING SOON", mapSoon:"RANGE MAP<br>COMING SOON",
        yr:"YEAR-ROUND", br:"BREEDING", wi:"WINTER", bonus:"BONUS", male:"MALE", female:"FEMALE", notSeenSlot:"NOT SEEN", sort:"SORT BY", byNo:"NUMBER", byFam:"FAMILY", nonpass:"NON-PASSERINES", pass:"PASSERINES",
-       inprog:"REGISTRATION IN PROGRESS... Photos, range map and stats coming soon.", lockedA:"has not been photographed yet.", lockedB:"Next trip, maybe.",
+       inprog:"REGISTRATION IN PROGRESS... Some data still coming soon.", lockedA:"has not been photographed yet.", lockedB:"Next trip, maybe.",
        scale:"Size and weight on a log scale, from the bee hummingbird to the ostrich. Altitude on a square-root scale from sea level to 5000 m.",
-       foot:"Range maps from eBird, Birds of the World, Wikimedia and IUCN · Sizes and weights from Animal Diversity Web and Wikipedia · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla · Moixó is Catalan for little bird"},
-  ca: {tag:"EL TEU REGISTRE D'OCELLS", uc:"WEB EN CONSTRUCCIÓ", ucs:"(qualsevol crítica serà ben rebuda!)", list:"LLISTA", wing:"ENVERGADURA", showNot:"MOSTRA ELS NO VISTOS", tabFav:"EL MEU EQUIP", test:"VERSIÓ DE PROVA", teamT:"EL MEU EQUIP", trainer:"EL TEU PERSONATGE<br>PROPERAMENT", favHint:"Toca fins a 6 ocells que hagis vist per fer el teu equip.", favNone:"Primer carrega o marca algun ocell a LA MEVA DEX.", team:"EQUIP", tabFull:"DEX COMPLETA", tabMine:"LA MEVA DEX", impT:"Carrega les teves observacions d'ocells per omplir la teva dex. Només es guarden en aquest navegador.", user:"nom d'usuari", load:"CARREGA", upload:"PUJA CSV / ZIP", ebHow:"Descarrega les teves dades d'eBird", clear:"ESBORRA LES MEVES DADES", sure:"SEGUR? TORNA A CLICAR", loading:"CARREGANT...", yours:"LES TEVES OBSERVACIONS", first:"VIST PER PRIMER COP", lifeTip:"La llista de vida només inclou la primera observació. Per tenir-les totes i el mapa, fes servir Download My Data.", mark:"MARCA COM A VIST", unmark:"DESMARCA", marked:"MARCAT COM A VIST", more:"més", got:"LA TEVA DEX", mapAria:"Mapa de les teves observacions", errInat:"No s'ha pogut carregar. Revisa el nom d'usuari.", errEb:"No reconec el fitxer. Fes servir el de Download My Data d'eBird.", moixo:"Moixó: ocellet, en català", entry:"FITXA", all:"TOTS", reset:"ESBORRA FILTRES", log:"VIST", seen:"VISTOS", notseen:"ENCARA NO VIST", region:"REGIÓ", regions:"REGIONS",
+       foot:"Range maps from eBird, Birds of the World, Wikimedia and IUCN · Sizes from Animal Diversity Web and Wikipedia · Weights and diets from AVONET (Tobias et al. 2022) · Altitudes from the global bird elevation database (Univ. of Copenhagen) · Conservation status: IUCN Red List<br>Photos and sprites by @regulus_ignicapilla · Moixó is Catalan for little bird"},
+  ca: {tag:"EL TEU REGISTRE D'OCELLS", uc:"WEB EN CONSTRUCCIÓ", ucs:"(qualsevol crítica serà ben rebuda!)", list:"LLISTA", wing:"ENVERGADURA", showNot:"MOSTRA ELS NO VISTOS", filters:"FILTRES", recap:"EL MEU RESUM", recapSp:"ESPÈCIES", recapFam:"FAMÍLIES", recapSave:"DESA LA IMATGE", recapShare:"COMPARTEIX", recapClose:"TANCA", recapNone:"Primer carrega o marca algun ocell.", tabFav:"EL MEU EQUIP", test:"VERSIÓ DE PROVA", teamT:"EL MEU EQUIP", trainer:"EL TEU PERSONATGE<br>PROPERAMENT", favHint:"Toca fins a 6 ocells que hagis vist per fer el teu equip.", favNone:"Primer carrega o marca algun ocell a LA MEVA DEX.", team:"EQUIP", tabFull:"DEX COMPLETA", tabMine:"LA MEVA DEX", impT:"Carrega les teves observacions d'ocells per omplir la teva dex. Només es guarden en aquest navegador.", user:"nom d'usuari", load:"CARREGA", upload:"PUJA CSV / ZIP", ebHow:"Descarrega les teves dades d'eBird", clear:"ESBORRA LES MEVES DADES", sure:"SEGUR? TORNA A CLICAR", loading:"CARREGANT...", yours:"LES TEVES OBSERVACIONS", first:"VIST PER PRIMER COP", lifeTip:"La llista de vida només inclou la primera observació. Per tenir-les totes i el mapa, fes servir Download My Data.", mark:"MARCA COM A VIST", unmark:"DESMARCA", marked:"MARCAT COM A VIST", more:"més", got:"LA TEVA DEX", mapAria:"Mapa de les teves observacions", errInat:"No s'ha pogut carregar. Revisa el nom d'usuari.", errEb:"No reconec el fitxer. Fes servir el de Download My Data d'eBird.", moixo:"Moixó: ocellet, en català", entry:"FITXA", all:"TOTS", reset:"ESBORRA FILTRES", log:"VIST", seen:"VISTOS", notseen:"ENCARA NO VIST", region:"REGIÓ", regions:"REGIONS",
        diet:"DIETA", habitat:"HÀBITAT", size:"MIDA", weight:"PES", alt:"ALTITUD", status:"ESTAT", stats:"DADES", sightings:"OBSERVACIONS", nores:"CAP OCELL NO COMPLEIX AQUESTS FILTRES.",
        showing:"RESULTATS:", listed:"TOTAL:", photo:"FOTO", range:"DISTRIBUCIÓ", pending:"PENDENT", photoSoon:"FOTO<br>PROPERAMENT", mapSoon:"MAPA<br>PROPERAMENT",
        yr:"TOT L'ANY", br:"ÈPOCA DE CRIA", wi:"HIVERN", bonus:"EXTRA", male:"MASCLE", female:"FEMELLA", notSeenSlot:"NO VIST", sort:"ORDENA PER", byNo:"NÚMERO", byFam:"FAMÍLIA", nonpass:"NO PASSERIFORMES", pass:"PASSERIFORMES",
-       inprog:"FITXA EN PREPARACIÓ... Aviat hi haurà la foto, el mapa i les dades.", lockedA:"encara està per descobrir.", lockedB:"Potser al proper viatge.",
+       inprog:"FITXA EN PREPARACIÓ... Aviat hi haurà la resta de dades.", lockedA:"encara està per descobrir.", lockedB:"Potser al proper viatge.",
        scale:"Mida i pes en escala logarítmica, del colibrí abella a l'estruç. Altitud en escala d'arrel quadrada, del nivell del mar als 5.000 m.",
-       foot:"Mapes de distribució d'eBird, Birds of the World, Wikimedia i la UICN · Mides i pesos d'Animal Diversity Web i la Viquipèdia · Estat de conservació: Llista Vermella de la UICN<br>Fotos i sprites de @regulus_ignicapilla · Moixó vol dir ocellet"}
+       foot:"Mapes de distribució d'eBird, Birds of the World, Wikimedia i la UICN · Mides d'Animal Diversity Web i la Viquipèdia · Pesos i dietes d'AVONET (Tobias et al. 2022) · Altituds de la base de dades d'altitud dels ocells del món (Univ. de Copenhaguen) · Estat de conservació: Llista Vermella de la UICN<br>Fotos i sprites de @regulus_ignicapilla · Moixó vol dir ocellet"}
 };
 const t = k => T[LANG][k];
-const TYPE_CA = {"FRUGIVORE":"FRUGÍVOR","NECTARIVORE":"NECTARÍVOR","GRANIVORE":"GRANÍVOR","PISCIVORE":"PISCÍVOR","INSECTIVORE":"INSECTÍVOR","CARNIVORE":"CARNÍVOR","SCAVENGER":"CARRONYAIRE","OMNIVORE":"OMNÍVOR","FILTER FEEDER":"FILTRADOR",
-  "CLOUD FOREST":"BOSC NEBULÓS","RAINFOREST":"SELVA TROPICAL","PARAMO":"PÀRAMO","WETLAND":"ZONA HUMIDA","COAST":"COSTA","GRASSLAND":"ESPAIS OBERTS","MOUNTAIN":"MUNTANYA","FOREST":"BOSC","ADAPTABLE":"ADAPTABLE"};
+const TYPE_CA = {"FRUGIVORE":"FRUGÍVOR","NECTARIVORE":"NECTARÍVOR","GRANIVORE":"GRANÍVOR","PISCIVORE":"PISCÍVOR","INSECTIVORE":"INSECTÍVOR","CARNIVORE":"CARNÍVOR","SCAVENGER":"CARRONYAIRE","OMNIVORE":"OMNÍVOR","FILTER FEEDER":"FILTRADOR","INVERTIVORE":"INVERTÍVOR","AQUATIC PREDATOR":"DEPREDADOR AQUÀTIC","VERTIVORE":"VERTÍVOR","HERBIVORE":"HERBÍVOR",
+  "CLOUD FOREST":"BOSC NEBULÓS","RAINFOREST":"SELVA TROPICAL","PARAMO":"ERM D'ALTURA","WETLAND":"ZONA HUMIDA","COAST":"COSTA","GRASSLAND":"ESPAIS OBERTS","MOUNTAIN":"MUNTANYA","FOREST":"BOSC","ADAPTABLE":"ADAPTABLE"};
 const REG_CA = {"CENTRAL AMERICA":"AMÈRICA CENTRAL","SOUTH AMERICA":"AMÈRICA DEL SUD","NORTH AMERICA":"AMÈRICA DEL NORD","EUROPE":"EUROPA","AFRICA":"ÀFRICA","ASIA":"ÀSIA","OCEANIA":"OCEANIA"};
 const IUCN_CA = {LC:"Preocupació menor",NT:"Quasi amenaçada",VU:"Vulnerable",EN:"En perill",CR:"En perill crític"};
 const BIN_CA = {size:["Molt petit (menys de 15 cm)","Petit (15-40 cm)","Mitjà (40-80 cm)","Gran (més de 80 cm)"], weight:["Menys de 10 g","10-100 g","100 g-1 kg","Més d'1 kg"],
@@ -400,6 +446,7 @@ function setLang(l) {
 }
 document.addEventListener("keydown", e => {
   if (!document.getElementById("lang-menu").hidden || e.target.closest("select")) return;
+  if (!document.getElementById("recap").hidden) { if (e.key === "Escape") { document.getElementById("recap").hidden = true; document.getElementById("recap-b")?.focus(); } return; }
   if (e.key === "Escape" && document.body.classList.contains("open")) { closeEntry(); return; }
   if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && (document.body.classList.contains("open") || !MOB())) { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
 });
@@ -424,7 +471,7 @@ function applyStatic() {
 }
 const logpos = (v, lo, hi) => Math.log(v / lo) / Math.log(hi / lo);
 const altpos = h => Math.sqrt(h / 5000);
-const DIETS = ["FILTER FEEDER","FRUGIVORE","NECTARIVORE","GRANIVORE","INSECTIVORE","PISCIVORE","CARNIVORE","SCAVENGER","OMNIVORE"];
+const DIETS = ["INVERTIVORE","AQUATIC PREDATOR","VERTIVORE","FILTER FEEDER","FRUGIVORE","NECTARIVORE","GRANIVORE","HERBIVORE","INSECTIVORE","PISCIVORE","CARNIVORE","SCAVENGER","OMNIVORE"];
 const REGIONS = ["CENTRAL AMERICA","SOUTH AMERICA","NORTH AMERICA","EUROPE","AFRICA","ASIA","OCEANIA"];
 const BINS = {
   size:   [["XS", "Tiny (under 15 cm)", 0, 15], ["S", "Small (15-40 cm)", 15, 40], ["M", "Medium (40-80 cm)", 40, 80], ["L", "Large (over 80 cm)", 80, 1e9]],
@@ -447,6 +494,7 @@ function matches(b) {
   if (F.status && b.status !== F.status) return false;
   return true;
 }
+let FOPEN = false;
 function filtersHTML() {
   const types = BIRDS.flatMap(b => b.types);
   const diets = DIETS.filter(t => types.includes(t)), habs = [...new Set(types.filter(t => !DIETS.includes(t)))].sort();
@@ -454,11 +502,13 @@ function filtersHTML() {
   const sel = (key, label, opts) => `<label class="flt"><span>${label}</span><select data-f="${key}" class="${F[key] ? "on" : ""}">
     <option value="">${t("all")}</option>${opts.map(([v, t]) => `<option value="${v}" ${F[key] === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
   const any = Object.values(F).some(Boolean);
+  const nAct = Object.values(F).filter(Boolean).length + (SORT !== "no" ? 1 : 0);
   document.getElementById("filters").innerHTML =
+    `<button class="chip ftog" type="button" id="ftog" aria-expanded="${FOPEN}" aria-controls="fbody"><span>${t("filters")}${nAct ? ` (${nAct})` : ""}</span><span class="pm" aria-hidden="true">${FOPEN ? "−" : "+"}</span></button><div class="fbody" id="fbody" ${FOPEN ? "" : "hidden"}>` +
     `<label class="flt"><span>${t("sort")}</span><select id="sort" class="${SORT !== "no" ? "on" : ""}"><option value="no" ${SORT === "no" ? "selected" : ""}>${t("byNo")}</option><option value="fam" ${SORT === "fam" ? "selected" : ""}>${t("byFam")}</option></select></label>` + (VIEW === "mine" || BIRDS.some(b => b.unseen) ? sel("log", t("log"), [["SEEN", t("seen")], ["NOT SEEN", t("notseen")]]) : "") + sel("region", t("region"), regs.map(r => [r, tReg(r)])) + sel("diet", t("diet"), diets.map(d => [d, tType(d)])) + sel("habitat", t("habitat"), habs.map(h => [h, tType(h)])) +
     ["size", "weight", "alt"].map(k => sel(k, t(k), BINS[k].map((x, i) => [x[0], LANG === "ca" ? BIN_CA[k][i] : x[1]]))).join("") +
     sel("status", t("status"), IUCN.map(c => [c, tIucn(c)])) +
-    `<button class="reset" type="button" id="reset" ${any ? "" : "disabled"}>${t("reset")}</button>`;
+    `<button class="reset" type="button" id="reset" ${any ? "" : "disabled"}>${t("reset")}</button></div>`;
 }
 function sprHTML(b) {
   const img = `<img class="e-spr" id="e-spr-img" src="${b.sprite}" alt="Pixel sprite of a male ${b.en}">`;
@@ -517,17 +567,6 @@ function entryHTML(no) {
   document.querySelectorAll(".slot").forEach(s => s.setAttribute("aria-current", s.dataset.no === no ? "true" : "false"));
   const el = document.getElementById("entry");
   if (!b) { el.innerHTML = `<div class="locked"><div class="big">???</div><div>Nº ${no} ${t("lockedA")}</div><div class="scale">${t("lockedB")}</div></div>`; return; }
-  if (b.pending) { el.innerHTML = `<article class="entry">
-    <div class="e-head"><div>
-      <div class="e-no">Nº ${b.no} · ${b.regions.length > 1 ? t("regions") : t("region")}: ${b.regions.map(tReg).join(" · ")}</div>
-      <h2 class="e-en">${nm(b)}</h2>
-      <div class="e-la">${b.la}</div>
-      <div class="e-alt">${altNames(b)}</div>
-    </div>${sprHTML(b)}</div>
-    <div class="types">${b.types.map(t => `<span class="type" style="background:${TYPE_COL[t] || "#555"}">${tType(t)}</span>`).join("")}</div>
-    <p class="fact">${t("inprog")}</p>
-    ${VIEW === "mine" ? myLogHTML(b) : logHTML(b)}
-  </article>`; return; }
   const iu = IUCN.indexOf(b.status);
   el.innerHTML = `<article class="entry">
     <div class="e-head"><div>
@@ -537,7 +576,8 @@ function entryHTML(no) {
       <div class="e-alt">${altNames(b)}</div>
     </div>${sprHTML(b)}</div>
     <div class="types">${b.types.map(t => `<span class="type" style="background:${TYPE_COL[t] || "#555"}">${tType(t)}</span>`).join("")}</div>
-    <p class="fact">${factOf(b, "fact")}</p>
+    ${b.pending ? `<p class="fact">${t("inprog")}</p>` : ""}
+    ${b.fact ? `<p class="fact">${factOf(b, "fact")}</p>` : ""}
     ${b.fact2 ? `<p class="fact bonus"><span class="bn">${t("bonus")}</span> ${factOf(b, "fact2")}</p>` : ""}
     <div class="media">
       ${b.photo ? `<figure><img src="${b.photo}" alt="${b.en} photographed by @regulus_ignicapilla"><figcaption>${t("photo")} · ${b.photoPlace}</figcaption></figure>`
@@ -547,15 +587,15 @@ function entryHTML(no) {
     </div>
     <div class="stats" role="list">
       <h3 class="sec">${t("stats")}</h3>
-      <div class="stat" role="listitem"><span class="k">${t("size")}</span>${bar(logpos(b.size[0],5,275), logpos(b.size[1],5,275))}<span class="v">${rng(b.size)} cm</span></div>
-      <div class="stat" role="listitem"><span class="k">${t("weight")}</span>${bar(logpos(b.weight[0],2,150000), logpos(b.weight[1],2,150000))}<span class="v">${rng(b.weight)} g</span></div>
+      ${b.size ? `<div class="stat" role="listitem"><span class="k">${t("size")}</span>${bar(logpos(b.size[0],5,275), logpos(b.size[1],5,275))}<span class="v">${rng(b.size)} cm</span></div>` : ""}
+      ${b.weight ? `<div class="stat" role="listitem"><span class="k">${t("weight")}</span>${bar(logpos(b.weight[0],2,150000), logpos(b.weight[1],2,150000))}<span class="v">${rng(b.weight)} g</span></div>` : ""}
       ${b.alt ? `<div class="stat" role="listitem"><span class="k">${t("alt")}</span>${bar(altpos(b.alt[0]), altpos(b.alt[1]))}<span class="v">${rng(b.alt)} m</span></div>` : ""}
       ${b.wingspan ? `<div class="stat" role="listitem"><span class="k">${t("wing")}</span>${bar(logpos(b.wingspan[0],5,275), logpos(b.wingspan[1],5,275))}<span class="v">${rng(b.wingspan)} cm</span></div>` : ""}
       <div class="stat" role="listitem"><span class="k">${t("status")}</span><span class="iucn">${IUCN.map((c, i) => `<i class="${i === iu ? "on" : ""}">${c}</i>`).join("")}</span><span class="v">${tIucn(b.status)}</span></div>
       <div class="scale">${t("scale")}</div>
     </div>
     ${VIEW === "mine" ? myLogHTML(b) : logHTML(b)}
-    ${b.links.length ? `<div class="links">${b.links.map(l => `<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div>` : ""}
+    ${(b.links || []).length ? `<div class="links">${b.links.map(l => `<a href="${l[1]}" target="_blank" rel="noopener">${l[0]}</a>`).join("")}</div>` : ""}
   </article>`;
 }
 const MOB = () => matchMedia("(max-width:860px)").matches;
@@ -601,6 +641,11 @@ document.addEventListener("click", e => {
   const lb = e.target.closest(".lang-menu li");
   if (lb) { setLang(lb.dataset.lang); return; }
   if (!menu.hidden && !e.target.closest("#lang")) { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); }
+  if (e.target.closest("#ftog")) { FOPEN = !FOPEN; filtersHTML(); document.getElementById("ftog").focus(); return; }
+  if (e.target.closest("#recap-b")) { openRecap(); return; }
+  if (e.target.closest("#recap-x") || e.target.id === "recap") { document.getElementById("recap").hidden = true; document.getElementById("recap-b")?.focus(); return; }
+  if (e.target.closest("#recap-save")) { recapBlob().then(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "moixodex-recap.png"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }); return; }
+  if (e.target.closest("#recap-share")) { recapBlob().then(b => { const f = new File([b], "moixodex-recap.png", {type: "image/png"}); if (navigator.canShare && navigator.canShare({files: [f]})) navigator.share({files: [f], title: "Moixódex"}).catch(() => {}); }); return; }
   if (e.target.closest("#reset")) { for (const k in F) F[k] = ""; slotsHTML(); document.querySelector(".flt select")?.focus(); }
 });
 document.addEventListener("submit", e => { if (e.target.id === "inat-f") { e.preventDefault(); loadINat(document.getElementById("inat-u").value); } });
